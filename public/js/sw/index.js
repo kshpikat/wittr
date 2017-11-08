@@ -1,4 +1,4 @@
-var staticCacheName = 'wittr-static-v2';
+var staticCacheName = 'wittr-static-v40';
 
 self.addEventListener('install', function(event) {
   event.waitUntil(
@@ -36,4 +36,8 @@ self.addEventListener('fetch', function(event) {
       return response || fetch(event.request);
     })
   );
+});
+
+self.addEventListener('message', function(event) {
+    event.data;
 });
