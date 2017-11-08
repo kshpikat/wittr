@@ -14,7 +14,34 @@ export default function IndexController(container) {
 IndexController.prototype._registerServiceWorker = function() {
   if (!navigator.serviceWorker) return;
 
-  navigator.serviceWorker.register('/sw.js').then(function() {
+  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+    //reg.unregister();
+    //reg.update();
+    //reg.installing;
+    //reg.waiting;
+    //reg.active;
+    //reg.addEventListener();
+    if(reg.waiting) {
+      // there's an update ready
+    }
+
+    if(reg.installing) {
+      // there's an update in progress
+      reg.installing.addEventListener('statuschange', function (){
+        if(this.state == 'installed') {
+          // there's an update ready
+        }
+      });
+    }
+
+    reg.addEventListener('updatefound', function (){
+      reg.installing.addEventListener('statechange', function (){
+        if(this.state == 'installed') {
+          // there's an update ready
+        }
+      });
+    });
+
     console.log('Registration worked!');
   }).catch(function() {
     console.log('Registration failed!');
