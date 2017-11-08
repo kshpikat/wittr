@@ -1,3 +1,9 @@
 self.addEventListener('fetch', function(event) {
-  console.log(event.request);
+    event.respondWith(
+        new Response('Hello <b>world</b>', {
+            headers: {
+                'Content-Type': 'text/html'
+            }
+        })
+    );
 });
