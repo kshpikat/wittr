@@ -1,4 +1,4 @@
-var staticCacheName = 'wittr-static-v2';
+var staticCacheName = 'wittr-static-v112312312';
 
 self.addEventListener('install', function(event) {
   event.waitUntil(
@@ -37,6 +37,13 @@ self.addEventListener('fetch', function(event) {
     })
   );
 });
+
+self.addEventListener('message', function(event) {
+    if(event.data.foo && event.data.foo == 'bar') {
+        self.skipWaiting();
+    }
+});
+
 
 // TODO: listen for the "message" event, and call
 // skipWaiting if you get the appropriate message
