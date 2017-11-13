@@ -25,7 +25,17 @@ dbPromise.then(function(db) {
 });
 
 dbPromise.then(function(db) {
+  var tx = db.transaction('keyval', 'readwrite');
+  var keyValStore = tx.objectStore('keyval');
+  keyValStore.put('cat', 'favoriteAnimal');
+  return tx.complete;
   // TODO: in the keyval store, set
   // "favoriteAnimal" to your favourite animal
   // eg "cat" or "dog"
+}).then(function () {
+  console.log('Added favoriteAnimal:cat to keyval');
 });
+
+
+//  aslkdj falsk djfl askdj fl
+// alsdkjfaldskjf
