@@ -151,24 +151,29 @@ IndexController.prototype._openSocket = function() {
 };
 
 // called when the web socket sends message data
-IndexController.prototype._onSocketMessage = function(data) {
+IndexController.prototype._onSocketMessage = function (data) {
   var messages = JSON.parse(data);
 
-  this._dbPromise.then(function(db) {
+  this._dbPromise.then(function (db) {
     if (!db) return;
 
     var tx = db.transaction('wittrs', 'readwrite');
     var store = tx.objectStore('wittrs');
-    messages.forEach(function(message) {
+    messages.forEach(function (message) {
       store.put(message);
     });
 
-    // TODO: keep the newest 30 entries in 'wittrs',
-    // but delete the rest.
-    //
-    // Hint: you can use .openCursor(null, 'prev') to
-    // open a cursor that goes through an index/store
-    // backwards.
+    var index = store.index('by-date');
+    var limit = 30;
+
+    return index.openCursor(null, 'prev').then(function removeOldItem(cursor) {
+      if (!cursor) return;
+      console.log("Cursored at:", cursor.value.name);
+      return cursor.advance(limit);
+    }).then(function removeItem(cursor){
+      if (!cursor) return;
+      cursor.delete().then(function (){return cursor.continue().then(removeItem)});
+    });
   });
 
   this._postsView.addPosts(messages);
