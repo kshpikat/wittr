@@ -35,6 +35,8 @@ self.addEventListener('activate', function(event) {
   );
 });
 
+
+
 self.addEventListener('fetch', function(event) {
   var requestUrl = new URL(event.request.url);
 
@@ -47,9 +49,19 @@ self.addEventListener('fetch', function(event) {
       event.respondWith(servePhoto(event.request));
       return;
     }
-    // TODO: respond to avatar urls by responding with
-    // the return value of serveAvatar(event.request)
+    if (requestUrl.pathname.startsWith('/avatars/')) {
+      event.respondWith(serveAvatar(event.request));
+      return;
+    }
   }
+
+  event.respondWith(
+    new Response(caches.open()
+      .then(cache => cache.match(event.request)
+        .then(data => {return data;})
+        .catch(error => console.log(error))
+        .catch(error => console.log(error))
+      ))
 
   event.respondWith(
     caches.match(event.request).then(function(response) {
@@ -59,18 +71,33 @@ self.addEventListener('fetch', function(event) {
 });
 
 function serveAvatar(request) {
-  // Avatar urls look like:
-  // avatars/sam-2x.jpg
-  // But storageUrl has the -2x.jpg bit missing.
-  // Use this url to store & match the image in the cache.
-  // This means you only store one copy of each avatar.
   var storageUrl = request.url.replace(/-\dx\.jpg$/, '');
+  return caches.open(contentImgsCache).then(function(cache) {
+    return cache.match(storageUrl).then(function(response) {
+      if (response) {
+        console.warn('response from cache but put timeout to update', request.url);
+        setTimeout(retrieveAvatar, 1, request);
+        return response;
+      } else {
+        return fetch(request).then(function(networkResponse) {
+          cache.put(storageUrl, networkResponse.clone());
+          return networkResponse;
+        });
+      }
+    });
+  });
+}
 
-  // TODO: return images from the "wittr-content-imgs" cache
-  // if they're in there. But afterwards, go to the network
-  // to update the entry in the cache.
-  //
-  // Note that this is slightly different to servePhoto!
+function retrieveAvatar(request) {
+
+  console.warn('timeout', request.url);
+  var storageUrl = request.url.replace(/-\dx\.jpg$/, '');
+  return caches.open(contentImgsCache).then(function(cache) {
+    return fetch(request).then(function (networkResponse) {
+      cache.put(storageUrl, networkResponse.clone());
+      return networkResponse;
+    });
+  });
 }
 
 function servePhoto(request) {
@@ -93,3 +120,5 @@ self.addEventListener('message', function(event) {
     self.skipWaiting();
   }
 });
+
+
