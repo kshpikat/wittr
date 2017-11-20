@@ -2,6 +2,7 @@ import PostsView from './views/Posts';
 import ToastsView from './views/Toasts';
 import idb from 'idb';
 
+
 function openDatabase() {
   // If the browser doesn't support service worker,
   // we don't care about having a database
@@ -30,7 +31,7 @@ export default function IndexController(container) {
 
   setInterval(function() {
     indexController._cleanImageCache();
-  }, 1000 * 60 * 5);
+  }, 1000 * 10);
 
   this._showCachedMessages().then(function() {
     indexController._openSocket();
@@ -155,15 +156,41 @@ IndexController.prototype._openSocket = function() {
   });
 };
 
-IndexController.prototype._cleanImageCache = function() {
-  return this._dbPromise.then(function(db) {
+IndexController.prototype._cleanImageCache = function () {
+  console.error('clean images launched');
+  this._dbPromise.then(function (db) {
     if (!db) return;
 
-    // TODO: open the 'wittr' object store, get all the messages,
-    // gather all the photo urls.
-    //
-    // Open the 'wittr-content-imgs' cache, and delete any entry
-    // that you no longer need.
+    var tx = db.transaction('wittrs', 'readwrite');
+    var store = tx.objectStore('wittrs');
+    store.getAll().then(function (messages) {
+      var images = [];
+      messages.forEach(function (message) {
+        if (message.photo) {
+          images.push(message.photo);
+        }
+      });
+      console.log('message images', images)
+      return images;
+    }).then(function (images) {
+      caches.open('wittr-content-imgs').then(function (cache) {
+        cache.keys().then(function (keys) {
+          keys.forEach(function (key) {
+            var found = false;
+            images.forEach(function (image) {
+              if (key.url.endsWith(image)) {
+                found = true;
+              }
+            });
+            if (!found) {
+              cache.delete(key);
+              console.log('remove img from cache:', key.url);
+              //console.log('array of images:', images);
+            }
+          });
+        });
+      });
+    });
   });
 };
 
